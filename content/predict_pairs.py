@@ -303,7 +303,7 @@ if __name__ == "__main__":
 
     # Load data
     print(f"Loading data from {args.input}")
-    df = pd.read_csv(args.input, dtype=str)
+    df = pd.read_csv(args.input, dtype=str, sep=';')
 
     # Convert numeric and date columns
     df['AMOUNT'] = pd.to_numeric(df['AMOUNT'], errors='coerce')
