@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Findec - Invoice Analysis</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="logo_placeholder.png" alt="Findec Logo" id="logo">
+            <h1>Findec</h1>
+            <p>SAP Invoice Analysis Tool</p>
+        </header>
+
+        <main>
+            <div id="drop-zone">
+                <p>Drag & Drop your CSV file here</p>
+                <p>or</p>
+                <button id="browse-btn">Browse File</button>
+                <input type="file" id="file-input" accept=".csv" style="display: none;">
+                <p id="file-name-display"></p>
+            </div>
+
+            <button id="run-btn" disabled>Process Invoices</button>
+
+            <div id="logs-container">
+                <h2>Processing Logs:</h2>
+                <pre id="logs"></pre>
+            </div>
+             <div id="results-container" style="display: none;">
+                <h2>Results:</h2>
+                <p>Processing complete. Output JSON saved to: <code id="json-output-path"></code></p>
+                <button id="open-output-btn">Open Output Folder</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Findec. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+/* General Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: #fff;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 700px;
+    text-align: center;
+}
+
+header {
+    margin-bottom: 30px;
+}
+
+#logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-size: 2.5em;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+header p {
+    font-size: 1.1em;
+    color: #7f8c8d;
+}
+
+/* Drop Zone */
+#drop-zone {
+    border: 3px dashed #bdc3c7;
+    border-radius: 8px;
+    padding: 40px 20px;
+    margin-bottom: 25px;
+    background-color: #ecf0f1;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+#drop-zone.dragover {
+    background-color: #e0e6e8;
+    border-color: #3498db;
+}
+
+#drop-zone p {
+    margin: 10px 0;
+    font-size: 1em;
+    color: #555;
+}
+
+/* Buttons */
+button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 1em;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+button:disabled {
+    background-color: #a0b3c1;
+    cursor: not-allowed;
+}
+
+#browse-btn {
+    background-color: #95a5a6;
+}
+
+#browse-btn:hover {
+    background-color: #7f8c8d;
+}
+
+/* File Name Display */
+#file-name-display {
+    margin-top: 15px;
+    font-style: italic;
+    color: #34495e;
+}
+
+/* Logs and Results */
+#logs-container, #results-container {
+    margin-top: 30px;
+    text-align: left;
+    background-color: #fdfefe;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e1e8ed;
+}
+
+#logs-container h2, #results-container h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.4em;
+    color: #2c3e50;
+    border-bottom: 1px solid #eaecee;
+    padding-bottom: 10px;
+}
+
+#logs {
+    width: 100%;
+    height: 150px;
+    overflow-y: auto;
+    background-color: #eef1f2;
+    border: 1px solid #dadedf;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #333;
+}
+
+#json-output-path {
+    font-family: "Courier New", Courier, monospace;
+    background-color: #eef1f2;
+    padding: 3px 6px;
+    border-radius: 3px;
+}
+
+/* Footer */
+footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eaecee;
+    font-size: 0.9em;
+    color: #95a5a6;
+}

@@ -1,0 +1,68 @@
+{
+  "name": "findec",
+  "version": "1.0.0",
+  "description": "Findec - Invoice Analysis Tool",
+  "main": "app/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
+  },
+  "keywords": [
+    "Electron",
+    "Invoice",
+    "Analysis"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.findec.app",
+    "productName": "Findec",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "app/**/*",
+      "backend/**/*",
+      "content/**/*",
+      "!content/requirements.txt",
+      "!content/predict_pairs.py",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "icon": "build/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend"
+      },
+      {
+        "from": "content",
+        "to": "content"
+      }
+    ]
+  }
+}

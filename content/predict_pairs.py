@@ -1,4 +1,3 @@
-
 import os
 import pandas as pd
 import numpy as np
@@ -51,7 +50,7 @@ def row_to_sentence(row):
 
     return template
 
-def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.csv', batch_size=250000):
+def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.csv', batch_size=250000, output_csv_path=None):
     '''
     Predict duplicates in a dataframe using the trained model.
 
@@ -61,6 +60,7 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
         threshold_path: Path to the saved threshold
         output_path: Path to save the duplicates CSV
         batch_size: Number of pairs to process in each batch
+        output_csv_path: Path to save the output CSV of scored pairs
     '''
     # Load model and threshold
     print(f"Loading model from {model_path}")
@@ -203,8 +203,9 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
         final_duplicates_df = final_duplicates_df.sort_values('similarity', ascending=False)
 
         print(f"Found {len(final_duplicates_df)} potential duplicates")
-        final_duplicates_df.to_csv(output_path, index=False)
-        print(f"Saved results to {output_path}")
+        if output_csv_path:
+            final_duplicates_df.to_csv(output_csv_path, index=False)
+            print(f"Saved scored pairs to {output_csv_path}")
         return final_duplicates_df
     else:
         print("No duplicates found")
@@ -212,7 +213,9 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
         empty_df = pd.DataFrame(columns=['similarity'] +
                                [f'INV1_{col}' for col in df.columns] +
                                [f'INV2_{col}' for col in df.columns])
-        empty_df.to_csv(output_path, index=False)
+        if output_csv_path:
+            empty_df.to_csv(output_csv_path, index=False)
+            print(f"Saved empty DataFrame to {output_csv_path}")
         return empty_df
 
 def process_candidate_batch(batch, df, model, device, sentence_cache, threshold):
@@ -293,8 +296,9 @@ if __name__ == "__main__":
     parser.add_argument('--input', type=str, required=True, help='Path to input CSV file')
     parser.add_argument('--model', type=str, default='invoice_sbert', help='Path to model directory')
     parser.add_argument('--threshold', type=str, default='best_threshold.txt', help='Path to threshold file')
-    parser.add_argument('--output', type=str, default='duplicates.csv', help='Path to output CSV file')
+    parser.add_argument('--output', type=str, default='duplicates.csv', help='Path to output CSV file for duplicates (legacy, primarily for direct script execution)')
     parser.add_argument('--batch-size', type=int, default=250000, help='Batch size for processing')
+    parser.add_argument("--output_csv", help="Path to save the output CSV of scored pairs.")
 
     args = parser.parse_args()
 
@@ -310,4 +314,13 @@ if __name__ == "__main__":
     df['INVOICE_DATE'] = pd.to_datetime(df['INVOICE_DATE'], errors='coerce', format='mixed')
 
     # Predict duplicates
-    predict_duplicates(df, args.model, args.threshold, args.output, args.batch_size)
+    result_df = predict_duplicates(df, args.model, args.threshold, args.output, args.batch_size, args.output_csv)
+
+    # If --output_csv is not given, and the script is run directly,
+    # it might still be useful to print to console or save to the default args.output.
+    # The backend script will always provide --output_csv.
+    if not args.output_csv and not result_df.empty:
+        print("Outputting to console as --output_csv was not specified:")
+        print(result_df.to_string())
+    elif not args.output_csv and result_df.empty:
+        print("No duplicates found and --output_csv was not specified.")
