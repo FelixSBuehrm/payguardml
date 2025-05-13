@@ -1,0 +1,97 @@
+{
+  "name": "findec",
+  "version": "1.0.0",
+  "description": "Findec - Invoice Analysis Tool",
+  "main": "app/main.js",
+  "scripts": {
+    "start": "electron .",
+    "prepare-icons": "./scripts/prepare-icons.sh",
+    "fix-mac-icons": "./scripts/fix-mac-icons.sh",
+    "fix-win-icons": "./scripts/fix-win-icons.sh",
+    "pack": "npm run prepare-icons && electron-builder --dir",
+    "dist": "npm run prepare-icons && electron-builder",
+    "dist:mac": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac",
+    "dist:win": "npm run prepare-icons && npm run fix-win-icons && electron-builder --win --x64",
+    "dist:mac-arm": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac --arm64",
+    "dist:mac-intel": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac --x64",
+    "dist:mac-universal": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac --universal",
+    "dist:win-x64": "npm run prepare-icons && npm run fix-win-icons && electron-builder --win --x64",
+    "build-arm64": "npm run prepare-icons && electron-builder --mac --arm64 --config.mac.target=zip --config.compression=store --config.forceCodeSigning=false",
+    "build-universal": "npm run prepare-icons && electron-builder --mac --universal --config.mac.target=zip --config.compression=store --config.forceCodeSigning=false",
+    "quick-arm64": "./scripts/quick-arm64-build.sh",
+    "generate-icons": "node scripts/generate-icons.js",
+    "build-all": "./scripts/build-all-platforms.sh"
+  },
+  "keywords": [
+    "Electron",
+    "Invoice",
+    "Analysis"
+  ],
+  "author": "Nils Rudolf",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.findec.app",
+    "productName": "Findec",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "app/**/*",
+      "backend/**/*",
+      "content/**/*",
+      "!content/requirements.txt",
+      "!content/predict_pairs.py",
+      "node_modules/**/*",
+      "package.json",
+      "build/**/*.{icns,ico,png}",
+      "assets/**/*.{icns,ico,png}"
+    ],
+    "mac": {
+      "icon": "build/icon.icns",
+      "target": [
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "category": "public.app-category.finance"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend"
+      },
+      {
+        "from": "content",
+        "to": "content"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-store": "^10.0.1",
+    "fix-path": "^4.0.0"
+  }
+}
