@@ -2,6 +2,11 @@
 
 Findec is an intelligent SAP invoice analysis tool that uses SBERT and LLM models to identify potential duplicate invoices.
 
+<p align="center">
+  <img src="assets/app_image.png" alt="App Image">
+</p>
+
+
 **Prerequisites:**
 
 *   Access to a Gemini API key
