@@ -4,6 +4,7 @@ import time
 import json
 import pandas as pd
 import sys
+import re
 from datetime import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -62,6 +63,16 @@ Example: {{"classification": "Likely", "explanation": "Amounts and vendor are id
 JSON response:
 """
 
+def extract_retry_delay(error_message):
+    """Extract retry_delay value from the API error message."""
+    try:
+        match = re.search(r'retry_delay\s*{\s*seconds:\s*(\d+)\s*}', error_message)
+        if match:
+            return int(match.group(1))
+        return 60  # Default retry delay if not found
+    except Exception:
+        return 60  # Default retry delay if there's any error
+
 def call_gemini_api(prompt_text, genai_model_instance, item_num=None, total_items=None):  # Added item tracking
     if not genai_model_instance:  # Check passed instance
         return {"classification": "Skipped", "explanation": "API key not configured or model not initialized", "keyFactors": []}
@@ -117,12 +128,29 @@ def call_gemini_api(prompt_text, genai_model_instance, item_num=None, total_item
             sys.stdout.flush()
             return {"classification": "Error", "explanation": "LLM response parsing failed", "keyFactors": []}
     except Exception as e:
+        error_message = str(e)
         log_message(f"Error calling Gemini API: {e}", "ERROR")
+        
+        # Handle rate limit errors (HTTP 429)
+        if "429" in error_message:
+            retry_delay = extract_retry_delay(error_message)
+            log_message(f"Rate limit exceeded. API suggests retry in {retry_delay} seconds.", "WARNING")
+            # Return a more specific rate limit error with the actual delay value
+            error_result = {
+                "classification": "Error", 
+                "explanation": f"API call error: 429 You exceeded your current quota, please check your plan and billing details.", 
+                "keyFactors": [],
+                "retry_delay": retry_delay  # Add the retry delay to the result
+            }
+            print(f"PROGRESS:LLM_ITEM_ERROR:{item_num}:{total_items}", flush=True)
+            sys.stdout.flush()
+            return error_result
+        
         print(f"PROGRESS:LLM_ITEM_ERROR:{item_num}:{total_items}", flush=True)
         sys.stdout.flush()
-        return {"classification": "Error", "explanation": f"API call error: {str(e)}", "keyFactors": []}
+        return {"classification": "Error", "explanation": f"API call error: {error_message}", "keyFactors": []}
 
-def classify_pairs_with_llm(scored_pairs_df, api_key=None, batch_size=5, delay_between_calls=4, delay_between_batches=10):  # Adjusted rate limiting
+def classify_pairs_with_llm(scored_pairs_df, api_key=None, batch_size=2, delay_between_calls=4, delay_between_batches=10):  # Process 2 invoices at once
     # Reduced to 15 requests per minute (4 second delay = ~15 messages/minute)
     current_api_key = api_key if api_key else GEMINI_API_KEY_ENV
     genai_model_instance = None  # Initialize instance
@@ -191,11 +219,18 @@ def classify_pairs_with_llm(scored_pairs_df, api_key=None, batch_size=5, delay_b
             api_result = call_gemini_api(prompt, genai_model_instance, item_num, num_rows)  # Pass instance
             batch_results.append(api_result)
             
+            # Check if we hit a rate limit and need to adjust our delay
+            current_delay = delay_between_calls
+            if "retry_delay" in api_result:
+                # We hit a rate limit, use the suggested retry delay from the API
+                current_delay = api_result["retry_delay"]
+                log_message(f"Rate limit hit: Using API suggested delay of {current_delay}s for next request", "WARNING")
+            
             # Rate limiting with feedback
-            if idx < len(batch_df) - 1 and genai_model_instance and delay_between_calls > 0:
-                log_message(f"Rate limiting: waiting {delay_between_calls}s before next API call (Gemini Flash limit: 15 requests/minute)...", "INFO")
+            if idx < len(batch_df) - 1 and genai_model_instance and current_delay > 0:
+                log_message(f"Rate limiting: waiting {current_delay}s before next API call...", "INFO")
                 sys.stdout.flush()
-                time.sleep(delay_between_calls)  # Rate limiting
+                time.sleep(current_delay)  # Use the current_delay (either default or from API)
         
         results.extend(batch_results)
         

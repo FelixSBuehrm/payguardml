@@ -85,7 +85,25 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
     unique_doc_numbers = set(df['DOC_NO'])
     print(f"Number of unique document numbers: {len(unique_doc_numbers)}")
 
-    # Create sentence cache
+    # Filter out exact duplicates (where all column values are identical)
+    print("Filtering out exact duplicates from the dataset...")
+    original_count = len(df)
+    df = df.drop_duplicates(keep='first')
+    exact_duplicate_count = original_count - len(df)
+    
+    if exact_duplicate_count > 0:
+        print(f"Removed {exact_duplicate_count} exact duplicate rows (all columns have identical values)")
+        print(f"Dataset size reduced from {original_count} to {len(df)} rows")
+        
+        # Reset the index to ensure continuous indices after removing duplicates
+        df = df.reset_index(drop=True)
+        
+        # Update the DOC_NO to index mapping with the new indices
+        doc_no_to_idx = {doc_no: idx for idx, doc_no in enumerate(df['DOC_NO'])}
+    else:
+        print("No exact duplicates found in the dataset")
+
+    # Create sentence cache with the updated indices
     sentence_cache = {}
     for idx, row in df.iterrows():
         sentence = row_to_sentence(row)
@@ -269,7 +287,20 @@ def process_candidate_batch(batch, df, model, device, sentence_cache, threshold)
         batch_indices.add(idx2)
 
     batch_indices = list(batch_indices)
-    batch_sentences = [sentence_cache[idx] for idx in batch_indices]
+    
+    # Safely get sentences, using int conversion to avoid numpy int64 issues
+    batch_sentences = []
+    for idx in batch_indices:
+        # Convert numpy.int64 to Python int if needed
+        idx = int(idx)
+        if idx in sentence_cache:
+            batch_sentences.append(sentence_cache[idx])
+        else:
+            # If the index isn't in the cache (which shouldn't happen with reset_index), 
+            # generate the sentence on the fly
+            batch_sentences.append(row_to_sentence(df.iloc[idx]))
+            # Add to cache for future use
+            sentence_cache[idx] = batch_sentences[-1]
 
     # Create index mapping for this batch
     batch_idx_map = {idx: i for i, idx in enumerate(batch_indices)}

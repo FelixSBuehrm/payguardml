@@ -303,7 +303,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 // Add classification section header
                 const llmHeader = document.createElement('div');
                 llmHeader.className = 'log-section-header phase-classification';
-                llmHeader.textContent = "INTELLIGENT CLASSIFICATION";
+                llmHeader.textContent = "LLM CLASSIFICATION";
                 logsElement.appendChild(llmHeader);
                 logsElement.scrollTop = logsElement.scrollHeight;
                 break;
@@ -505,13 +505,13 @@ window.addEventListener('DOMContentLoaded', () => {
         
         // Create section headers for key process steps
         if (cleanedLog.includes('Step 1:')) {
-            return `<div class="log-section-header">📊 DATA PREPARATION</div>`;
+            return `<div class="log-section-header">DATA PREPARATION</div>`;
         } else if (cleanedLog.includes('Step 2:')) {
-            return `<div class="log-section-header">🔍 SIMILARITY ANALYSIS</div>`;
+            return `<div class="log-section-header">SIMILARITY ANALYSIS</div>`;
         } else if (cleanedLog.includes('Step 3:')) {
-            return `<div class="log-section-header">🤖 INTELLIGENT CLASSIFICATION</div>`;
+            return `<div class="log-section-header">LLM CLASSIFICATION</div>`;
         } else if (cleanedLog.includes('Step 4:')) {
-            return `<div class="log-section-header">📝 RESULTS PREPARATION</div>`;
+            return `<div class="log-section-header">RESULTS PREPARATION</div>`;
         }
         
         // Format the remaining logs based on type
