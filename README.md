@@ -89,19 +89,23 @@ cd payguardml
 *   Ensure all dependencies are installed (`npm install`).
 *   From the project root directory (`payguardml/`):
 
-    *   **To build for your current platform (e.g., macOS if you are on a Mac):**
+    *   **To build for your current platform (e.g., macOS):**
         ```bash
         npm run dist
         ```
         Alternatively, for specific platforms:
     *   **For macOS (creates .dmg and .zip):**
         ```bash
-        npm run dist:mac
+        npm run dist:mac-arm
+        or 
+        npm run dist:mac-intel
         ```
     *   **For Windows (creates NSIS installer and .zip):**
         (Requires a Windows environment or appropriate cross-compilation setup)
         ```bash
         npm run dist:win
+        # or
+        npm run dist:win-x64
         ```
     *   The distributable files will be located in the `dist/` directory.
 

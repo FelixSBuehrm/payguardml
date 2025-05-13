@@ -7,14 +7,20 @@
     "start": "electron .",
     "prepare-icons": "./scripts/prepare-icons.sh",
     "fix-mac-icons": "./scripts/fix-mac-icons.sh",
+    "fix-win-icons": "./scripts/fix-win-icons.sh",
     "pack": "npm run prepare-icons && electron-builder --dir",
     "dist": "npm run prepare-icons && electron-builder",
     "dist:mac": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac",
-    "dist:win": "npm run prepare-icons && electron-builder --win",
+    "dist:win": "npm run prepare-icons && npm run fix-win-icons && electron-builder --win --x64",
+    "dist:mac-arm": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac --arm64",
+    "dist:mac-intel": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac --x64",
+    "dist:mac-universal": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac --universal",
+    "dist:win-x64": "npm run prepare-icons && npm run fix-win-icons && electron-builder --win --x64",
     "build-arm64": "npm run prepare-icons && electron-builder --mac --arm64 --config.mac.target=zip --config.compression=store --config.forceCodeSigning=false",
     "build-universal": "npm run prepare-icons && electron-builder --mac --universal --config.mac.target=zip --config.compression=store --config.forceCodeSigning=false",
     "quick-arm64": "./scripts/quick-arm64-build.sh",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "build-all": "./scripts/build-all-platforms.sh"
   },
   "keywords": [
     "Electron",
@@ -58,9 +64,16 @@
     "win": {
       "icon": "build/icon.ico",
       "target": [
-        "nsis",
-        "zip"
-      ]
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
