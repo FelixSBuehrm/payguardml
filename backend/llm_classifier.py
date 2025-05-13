@@ -3,29 +3,31 @@ import os
 import time
 import json
 import pandas as pd
+import sys
+from datetime import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY_ENV = os.getenv("GEMINI_API_KEY")  # Renamed to avoid conflict
 
-if not GEMINI_API_KEY:
-    print("Warning: GEMINI_API_KEY not found in .env file. LLM classification will be skipped.")
-    genai_model = None
-else:
-    genai.configure(api_key=GEMINI_API_KEY)
-    generation_config = {"temperature": 0.7, "top_p": 1, "top_k": 1, "max_output_tokens": 1024}
-    safety_settings = [
-        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-    ]
-    genai_model = genai.GenerativeModel(model_name="gemini-1.5-flash",
-                                  generation_config=generation_config,
-                                  safety_settings=safety_settings)
+def log_message(message, message_type="INFO"):
+    """
+    Log a message to both stdout and stderr if it's an error
+    to ensure visibility in both UI and terminal.
+    """
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    formatted_message = f"[{timestamp}] [{message_type}] {message}"
+    
+    print(formatted_message, flush=True)
+    if message_type == "ERROR":
+        print(formatted_message, file=sys.stderr, flush=True)
+    
+    # For progress updates, add a special marker for the UI
+    if message_type == "PROGRESS":
+        print(f"PROGRESS:{message}", flush=True)
 
 def format_invoice_details_for_llm(invoice_prefix, row):
     details = [
@@ -60,52 +62,168 @@ Example: {{"classification": "Likely", "explanation": "Amounts and vendor are id
 JSON response:
 """
 
-def call_gemini_api(prompt_text):
-    if not genai_model:
-        return {"classification": "Skipped", "explanation": "API key not configured", "keyFactors": []}
+def call_gemini_api(prompt_text, genai_model_instance, item_num=None, total_items=None):  # Added item tracking
+    if not genai_model_instance:  # Check passed instance
+        return {"classification": "Skipped", "explanation": "API key not configured or model not initialized", "keyFactors": []}
     try:
-        response = genai_model.generate_content(prompt_text)
+        # Add real-time logging of the API call with more specific steps
+        if item_num and total_items:
+            log_message(f"Calling Gemini API for item {item_num}/{total_items}...", "INFO")
+            # Add a specific PROGRESS marker for individual item start
+            print(f"PROGRESS:LLM_ITEM_START:{item_num}:{total_items}", flush=True)
+        
+        # Flush stdout to ensure logs appear immediately
+        sys.stdout.flush()
+        
+        # Log the prompt preparation
+        log_message(f"Preparing prompt for item {item_num}/{total_items}", "INFO")
+        sys.stdout.flush()
+        
+        # Make the API call with timing information
+        start_time = time.time()
+        log_message(f"Sending request to Gemini API...", "INFO")
+        sys.stdout.flush()
+        
+        response = genai_model_instance.generate_content(prompt_text)  # Use passed instance
+        
+        # Log the API call timing
+        elapsed_time = time.time() - start_time
+        log_message(f"Gemini API response received in {elapsed_time:.2f} seconds", "INFO")
+        sys.stdout.flush()
+        
         response_text = response.text.strip()
+        
+        # Log the response receipt
+        if item_num and total_items:
+            log_message(f"Processing response for item {item_num}/{total_items}", "INFO")
+            sys.stdout.flush()
+            
         # Robust JSON extraction
         json_match = response_text[response_text.find('{'):response_text.rfind('}')+1]
         if json_match:
-            return json.loads(json_match)
+            result = json.loads(json_match)
+            # Log a summary of the classification
+            classification = result.get("classification", "Unknown")
+            log_message(f"Item {item_num}/{total_items}: Classified as '{classification}'", "INFO")
+            
+            # Add a specific PROGRESS marker for individual item completion
+            print(f"PROGRESS:LLM_ITEM_END:{item_num}:{total_items}:{classification}", flush=True)
+            sys.stdout.flush()
+            return result
         else:
-            print(f"Warning: Could not parse JSON from LLM response: {response_text}")
+            log_message(f"Warning: Could not parse JSON from LLM response: {response_text}", "WARNING")
+            # Add an error progress marker
+            print(f"PROGRESS:LLM_ITEM_ERROR:{item_num}:{total_items}", flush=True)
+            sys.stdout.flush()
             return {"classification": "Error", "explanation": "LLM response parsing failed", "keyFactors": []}
     except Exception as e:
-        print(f"Error calling Gemini API: {e}. Response: {response.text if 'response' in locals() else 'N/A'}")
-        return {"classification": "Error", "explanation": str(e), "keyFactors": []}
+        log_message(f"Error calling Gemini API: {e}", "ERROR")
+        print(f"PROGRESS:LLM_ITEM_ERROR:{item_num}:{total_items}", flush=True)
+        sys.stdout.flush()
+        return {"classification": "Error", "explanation": f"API call error: {str(e)}", "keyFactors": []}
 
-def classify_pairs_with_llm(scored_pairs_df, batch_size=5, delay_between_calls=1, delay_between_batches=5):
-    if not genai_model:
-        print("Skipping LLM classification as API key is not configured.")
+def classify_pairs_with_llm(scored_pairs_df, api_key=None, batch_size=5, delay_between_calls=4, delay_between_batches=10):  # Adjusted rate limiting
+    # Reduced to 15 requests per minute (4 second delay = ~15 messages/minute)
+    current_api_key = api_key if api_key else GEMINI_API_KEY_ENV
+    genai_model_instance = None  # Initialize instance
+
+    if not current_api_key:
+        log_message("Warning: Gemini API Key not provided via argument or .env file. LLM classification will be skipped.", "WARNING")
+    else:
+        try:
+            log_message("Configuring Gemini API...", "INFO")
+            sys.stdout.flush()
+            
+            genai.configure(api_key=current_api_key)
+            generation_config = {"temperature": 0.7, "top_p": 1, "top_k": 1, "max_output_tokens": 1024}
+            safety_settings = [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+            ]
+            genai_model_instance = genai.GenerativeModel(model_name="gemini-1.5-flash",
+                                                  generation_config=generation_config,
+                                                  safety_settings=safety_settings)
+            log_message("Gemini API configured successfully.", "INFO")
+            sys.stdout.flush()
+        except Exception as e:
+            log_message(f"Error configuring Gemini API: {e}. LLM classification will be skipped.", "ERROR")
+            sys.stdout.flush()
+            # genai_model_instance remains None
+
+    if not genai_model_instance:  # Check if instance was created
+        log_message("Skipping LLM classification as API key is not configured or model initialization failed.", "WARNING")
         output_df = scored_pairs_df.copy()
         output_df['llm_classification'] = "Skipped"
-        output_df['llm_explanation'] = "API key not configured"
+        output_df['llm_explanation'] = "API key not configured or model initialization failed"
         output_df['llm_key_factors'] = [[] for _ in range(len(output_df))]
         return output_df
 
     results = []
     num_rows = len(scored_pairs_df)
+    log_message(f"Starting LLM classification for {num_rows} invoice pairs", "INFO")
+    sys.stdout.flush()
+    
+    # Print overall LLM process start
+    print(f"PROGRESS:LLM_TOTAL_ITEMS:{num_rows}", flush=True)
+    
     for i in range(0, num_rows, batch_size):
         batch_df = scored_pairs_df.iloc[i:i+batch_size]
-        print(f"LLM Processing batch {i//batch_size + 1}/{(num_rows + batch_size -1)//batch_size}")
+        current_batch_number = i//batch_size + 1
+        total_batches = (num_rows + batch_size -1)//batch_size
+        
+        # PROGRESS: LLM Batch with more detailed information
+        print(f"PROGRESS:LLM_BATCH_START:{current_batch_number}:{total_batches}:{i+1}:{min(i+batch_size, num_rows)}:{num_rows}", flush=True)
+        log_message(f"LLM Processing batch {current_batch_number}/{total_batches} (items {i+1}-{min(i+batch_size, num_rows)} of {num_rows})", "INFO")
+        sys.stdout.flush()
         
         batch_results = []
-        for index, row in batch_df.iterrows():
+        batch_start_time = time.time()
+        
+        for idx, (index, row) in enumerate(batch_df.iterrows()):
+            item_num = i + idx + 1
             prompt = generate_llm_prompt(row)
-            api_result = call_gemini_api(prompt)
+            log_message(f"Processing item {item_num}/{num_rows} in batch {current_batch_number}", "INFO")
+            sys.stdout.flush()
+            
+            # Process the item with added detail
+            api_result = call_gemini_api(prompt, genai_model_instance, item_num, num_rows)  # Pass instance
             batch_results.append(api_result)
-            if genai_model: time.sleep(delay_between_calls) # Rate limiting
+            
+            # Rate limiting with feedback
+            if idx < len(batch_df) - 1 and genai_model_instance and delay_between_calls > 0:
+                log_message(f"Rate limiting: waiting {delay_between_calls}s before next API call (Gemini Flash limit: 15 requests/minute)...", "INFO")
+                sys.stdout.flush()
+                time.sleep(delay_between_calls)  # Rate limiting
+        
         results.extend(batch_results)
         
-        if i + batch_size < num_rows and genai_model:
-            print(f"Waiting {delay_between_batches}s before next batch...")
+        # Batch completion timing and progress update
+        batch_elapsed_time = time.time() - batch_start_time
+        log_message(f"Batch {current_batch_number}/{total_batches} completed in {batch_elapsed_time:.2f} seconds", "INFO")
+        sys.stdout.flush()
+        
+        # Progress update after batch completion with more detailed information
+        print(f"PROGRESS:LLM_BATCH_END:{current_batch_number}:{total_batches}:{batch_elapsed_time:.2f}", flush=True)
+        log_message(f"Completed batch {current_batch_number}/{total_batches}", "INFO")
+        sys.stdout.flush()
+
+        if i + batch_size < num_rows and genai_model_instance and delay_between_batches > 0:
+            log_message(f"Waiting {delay_between_batches}s before next batch...", "INFO")
+            sys.stdout.flush()
             time.sleep(delay_between_batches)
     
     output_df = scored_pairs_df.copy()
     output_df['llm_classification'] = [r.get("classification", "Error") for r in results]
     output_df['llm_explanation'] = [r.get("explanation", "N/A") for r in results]
     output_df['llm_key_factors'] = [r.get("keyFactors", []) for r in results]
+    
+    # Count classification results
+    classification_counts = output_df['llm_classification'].value_counts().to_dict()
+    log_message(f"LLM Classification complete. Results: {classification_counts}", "INFO")
+    sys.stdout.flush()
+    
+    # PROGRESS: LLM End with classification counts
+    print(f"PROGRESS:LLM_END:{json.dumps(classification_counts)}", flush=True)
     return output_df

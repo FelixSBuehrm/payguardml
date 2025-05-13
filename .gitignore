@@ -16,6 +16,7 @@ yarn-error.log*
 
 # Output
 output/
+dist/
 *.csv
 # *.json # uncomment if you don't want to commit example outputs
 

@@ -5,17 +5,23 @@
   "main": "app/main.js",
   "scripts": {
     "start": "electron .",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder",
-    "dist:mac": "electron-builder --mac",
-    "dist:win": "electron-builder --win"
+    "prepare-icons": "./scripts/prepare-icons.sh",
+    "fix-mac-icons": "./scripts/fix-mac-icons.sh",
+    "pack": "npm run prepare-icons && electron-builder --dir",
+    "dist": "npm run prepare-icons && electron-builder",
+    "dist:mac": "npm run prepare-icons && npm run fix-mac-icons && electron-builder --mac",
+    "dist:win": "npm run prepare-icons && electron-builder --win",
+    "build-arm64": "npm run prepare-icons && electron-builder --mac --arm64 --config.mac.target=zip --config.compression=store --config.forceCodeSigning=false",
+    "build-universal": "npm run prepare-icons && electron-builder --mac --universal --config.mac.target=zip --config.compression=store --config.forceCodeSigning=false",
+    "quick-arm64": "./scripts/quick-arm64-build.sh",
+    "generate-icons": "node scripts/generate-icons.js"
   },
   "keywords": [
     "Electron",
     "Invoice",
     "Analysis"
   ],
-  "author": "Your Name",
+  "author": "Nils Rudolf",
   "license": "ISC",
   "devDependencies": {
     "electron": "^29.0.0",
@@ -25,7 +31,8 @@
     "appId": "com.findec.app",
     "productName": "Findec",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "app/**/*",
@@ -34,14 +41,19 @@
       "!content/requirements.txt",
       "!content/predict_pairs.py",
       "node_modules/**/*",
-      "package.json"
+      "package.json",
+      "build/**/*.{icns,ico,png}",
+      "assets/**/*.{icns,ico,png}"
     ],
     "mac": {
       "icon": "build/icon.icns",
       "target": [
-        "dmg",
         "zip"
-      ]
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "category": "public.app-category.finance"
     },
     "win": {
       "icon": "build/icon.ico",
@@ -64,5 +76,9 @@
         "to": "content"
       }
     ]
+  },
+  "dependencies": {
+    "electron-store": "^10.0.1",
+    "fix-path": "^4.0.0"
   }
 }
