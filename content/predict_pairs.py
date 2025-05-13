@@ -80,6 +80,10 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
 
     # Create a map of DOC_NO to index for faster lookups
     doc_no_to_idx = {doc_no: idx for idx, doc_no in enumerate(df['DOC_NO'])}
+    
+    # Create a set to track unique document numbers to prevent self-matching
+    unique_doc_numbers = set(df['DOC_NO'])
+    print(f"Number of unique document numbers: {len(unique_doc_numbers)}")
 
     # Create sentence cache
     sentence_cache = {}
@@ -106,7 +110,12 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
 
         # Add all pairs within this vendor group
         for i, idx1 in enumerate(indices):
+            doc1_no = df.iloc[idx1]['DOC_NO']
             for idx2 in indices[i+1:]:
+                doc2_no = df.iloc[idx2]['DOC_NO']
+                # Skip if document numbers are the same (self-matching)
+                if doc1_no == doc2_no:
+                    continue
                 candidate_pairs.add((min(idx1, idx2), max(idx1, idx2)))
 
     print(f"After VENDOR_ID blocking: {len(candidate_pairs)} candidate pairs")
@@ -128,7 +137,12 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
             continue
 
         for i, idx1 in enumerate(indices):
+            doc1_no = df.iloc[idx1]['DOC_NO']
             for idx2 in indices[i+1:]:
+                doc2_no = df.iloc[idx2]['DOC_NO']
+                # Skip if document numbers are the same (self-matching)
+                if doc1_no == doc2_no:
+                    continue
                 candidate_pairs.add((min(idx1, idx2), max(idx1, idx2)))
 
     print(f"After VENDOR_NAME prefix blocking: {len(candidate_pairs)} candidate pairs")
@@ -141,7 +155,12 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
             continue
 
         for i, idx1 in enumerate(indices):
+            doc1_no = df.iloc[idx1]['DOC_NO']
             for idx2 in indices[i+1:]:
+                doc2_no = df.iloc[idx2]['DOC_NO']
+                # Skip if document numbers are the same (self-matching)
+                if doc1_no == doc2_no:
+                    continue
                 candidate_pairs.add((min(idx1, idx2), max(idx1, idx2)))
 
     print(f"After PURCHASE_ORDER blocking: {len(candidate_pairs)} candidate pairs")
@@ -154,7 +173,12 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
             continue
 
         for i, idx1 in enumerate(indices):
+            doc1_no = df.iloc[idx1]['DOC_NO']
             for idx2 in indices[i+1:]:
+                doc2_no = df.iloc[idx2]['DOC_NO']
+                # Skip if document numbers are the same (self-matching)
+                if doc1_no == doc2_no:
+                    continue
                 candidate_pairs.add((min(idx1, idx2), max(idx1, idx2)))
 
     print(f"After DESCRIPTION blocking: {len(candidate_pairs)} candidate pairs")
@@ -167,7 +191,12 @@ def predict_duplicates(df, model_path, threshold_path, output_path='duplicates.c
             continue
 
         for i, idx1 in enumerate(indices):
+            doc1_no = df.iloc[idx1]['DOC_NO']
             for idx2 in indices[i+1:]:
+                doc2_no = df.iloc[idx2]['DOC_NO']
+                # Skip if document numbers are the same (self-matching)
+                if doc1_no == doc2_no:
+                    continue
                 candidate_pairs.add((min(idx1, idx2), max(idx1, idx2)))
 
     # Convert set to list for easier processing
@@ -251,6 +280,13 @@ def process_candidate_batch(batch, df, model, device, sentence_cache, threshold)
     # Compute similarities and find duplicates
     duplicates = []
     for idx1, idx2 in batch:
+        # Extra check to ensure we're not comparing an invoice with itself
+        doc1_no = df.iloc[idx1]['DOC_NO']
+        doc2_no = df.iloc[idx2]['DOC_NO']
+        if doc1_no == doc2_no:
+            print(f"Warning: Skipping self-comparison for document {doc1_no}")
+            continue
+            
         emb_idx1 = batch_idx_map[idx1]
         emb_idx2 = batch_idx_map[idx2]
 

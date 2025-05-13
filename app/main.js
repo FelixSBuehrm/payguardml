@@ -167,6 +167,14 @@ ipcMain.on('open-output-folder', (event, folderPath) => {
     });
 });
 
+// IPC handler to open external links in the default browser
+ipcMain.on('open-external-link', (event, url) => {
+    shell.openExternal(url).catch(err => {
+        console.error("Failed to open external link:", err);
+        event.sender.send('processing-log', `ERROR: Could not open link ${url}.`);
+    });
+});
+
 // IPC handler for processing CSV
 ipcMain.on('process-csv', async (event, csvPath) => { // Added async here
     const backendDir = path.join(projectRoot, 'backend');

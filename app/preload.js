@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onProcessingError: (callback) => ipcRenderer.on('processing-error', (_event, errorMsg) => callback(errorMsg)),
     openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
     openOutputFolder: (folderPath) => ipcRenderer.send('open-output-folder', folderPath),
+    openExternalLink: (url) => ipcRenderer.send('open-external-link', url),
     removeAllProcessingListeners: () => {
         ipcRenderer.removeAllListeners('processing-log');
         ipcRenderer.removeAllListeners('processing-complete');

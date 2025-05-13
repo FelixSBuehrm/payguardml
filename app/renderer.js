@@ -1098,10 +1098,19 @@ window.addEventListener('DOMContentLoaded', () => {
     // Add event listener to the PayGuard link when it appears
     document.addEventListener('click', (event) => {
         if (event.target.closest('#payguard-link')) {
+            // Prevent the default behavior of the link
+            event.preventDefault();
+            
+            // Get the URL from the link
+            const url = event.target.closest('#payguard-link').getAttribute('href');
+            
             // Log the click for analytics
             console.log('User clicked on PayGuard web app link');
             logsElement.innerHTML += `<div class="info-text">[${new Date().toLocaleTimeString()}] [INFO] Opening PayGuard web interface in browser...</div>`;
             logsElement.scrollTop = logsElement.scrollHeight;
+            
+            // Open the URL in the default external browser
+            window.electronAPI.openExternalLink(url);
             
             // Show a small tooltip confirmation
             const tooltip = document.createElement('div');
