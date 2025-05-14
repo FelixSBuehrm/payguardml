@@ -1,7 +1,7 @@
 #!/bin/bash
 # build-all-platforms.sh - Script to build for all supported platforms
 
-echo "Building PayGuard for all platforms..."
+echo "Building Findec for all platforms..."
 
 # 1. Build for macOS ARM64
 echo "----------------------------------------------"

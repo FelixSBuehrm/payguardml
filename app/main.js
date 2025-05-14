@@ -184,7 +184,7 @@ ipcMain.on('process-csv', async (event, csvPath) => { // Added async here
     let pythonExecutable;
     if (isDev && process.platform === 'darwin') {
         // IMPORTANT: User's specific path confirmed via `python -c "import sys; print(sys.executable)"`
-        pythonExecutable = '/opt/anaconda3/envs/PayGuard_env/bin/python'; 
+        pythonExecutable = '/opt/anaconda3/envs/findec_env/bin/python'; 
         const fs = require('fs');
         if (!fs.existsSync(pythonExecutable)) {
             console.error(`Specified Python path for dev does not exist: ${pythonExecutable}. Falling back to python3. Please verify the path.`);
@@ -399,7 +399,7 @@ ipcMain.on('delete-output-file', async (event, filePath) => {
     // Determine the appropriate Python executable
     let pythonExecutable;
     if (isDev && process.platform === 'darwin') {
-        pythonExecutable = '/opt/anaconda3/envs/PayGuard_env/bin/python';
+        pythonExecutable = '/opt/anaconda3/envs/findec_env/bin/python';
         const fs = require('fs');
         if (!fs.existsSync(pythonExecutable)) {
             console.error(`Specified Python path for dev does not exist: ${pythonExecutable}. Falling back to python3.`);
@@ -453,7 +453,7 @@ app.on('will-quit', () => {
     // Determine Python executable
     let pythonExecutable;
     if (process.platform === 'darwin') {
-        pythonExecutable = isDev ? '/opt/anaconda3/envs/PayGuard_env/bin/python' : 'python3';
+        pythonExecutable = isDev ? '/opt/anaconda3/envs/findec_env/bin/python' : 'python3';
     } else if (process.platform === 'win32') {
         pythonExecutable = 'python';
     } else {
