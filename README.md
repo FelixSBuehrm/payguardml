@@ -11,11 +11,41 @@ PayGuard is an intelligent SAP invoice analysis tool that uses SBERT and LLM mod
 
 *   Access to a Gemini API key
 
-**1. Clone the Repository (if you haven't already):**
+**Clone the Repository (if you haven't already):**
 
 ```bash
 git clone https://github.com/FelixSBuehrm/payguardml.git
 cd payguardml
+```
+
+**1. Project Architecture**
+
+PayGuard follows a modular architecture with clear separation between ML backend and Electron frontend:
+
+```
+├── app/                         # Electron frontend application
+│   ├── main.js                  # Main Electron process
+│   ├── renderer.js              # Renderer process for UI
+│   ├── index.html               # Main UI layout
+│   └── *.css                    # Styling files
+├── assets/                      # Images and icons
+├── backend/                     # Python backend for ML processing
+│   ├── main.py                  # Main processing pipeline
+│   ├── llm_classifier.py        # Gemini LLM integration
+│   ├── pair_predictor.py        # Invoice pair prediction
+│   ├── progress_monitor.py      # UI progress bar
+│   └── utils.py                 # Utility functions
+├── build/                       # Build assets for packaging
+├── content/                     # Core ML models and data
+│   ├── invoice_sbert/           # Pre-trained SBERT model
+│   └── predict_pairs.py         # SBERT prediction functionality
+├── output/                      # Generated analysis outputs
+├── scripts/                     # Build and packaging scripts
+├── SBERT_V3_GPU.ipynb           # SBERT Notebook Pipeline
+├── val_pairs.csv                # Test data
+├── training.csv                 # Training data
+├── README.md
+└── package.json                 # Project configuration
 ```
 
 **2. Setup Backend:**
