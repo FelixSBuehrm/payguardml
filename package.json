@@ -1,7 +1,7 @@
 {
-  "name": "findec",
+  "name": "PayGuard",
   "version": "1.0.0",
-  "description": "Findec - Invoice Analysis Tool",
+  "description": "PayGuard - Invoice Analysis Tool",
   "main": "app/main.js",
   "scripts": {
     "start": "electron .",
@@ -35,7 +35,7 @@
   },
   "build": {
     "appId": "com.findec.app",
-    "productName": "Findec",
+    "productName": "PayGuard",
     "directories": {
       "output": "dist",
       "buildResources": "build"

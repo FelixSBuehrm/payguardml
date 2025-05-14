@@ -3,7 +3,7 @@ sentence-transformers>=4.1.0
 torch>=2.6.0
 tqdm>=4.66.3
 
-# Data handling
+# Data handling - pin numpy to 1.x for better compatibility
 pandas
 numpy
 
