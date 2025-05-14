@@ -1,7 +1,7 @@
 #!/bin/bash
 # quick-arm64-build.sh - Script to quickly build for ARM64 architecture
 
-echo "Building Findec for ARM64 architecture..."
+echo "Building PayGuard for ARM64 architecture..."
 
 # Ensure node modules are installed
 if [ ! -d "node_modules" ]; then
@@ -15,8 +15,8 @@ echo "Preparing icons..."
 
 # Create a temporary electron-builder.yml file with optimized settings
 cat > electron-builder-arm64.yml <<EOL
-appId: com.findec.app
-productName: Findec
+appId: com.PayGuard.app
+productName: PayGuard
 files:
   - app/**/*
   - build/**/*.{icns,ico,png}

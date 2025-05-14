@@ -1,6 +1,6 @@
-# Findec
+# PayGuard
 
-Findec is an intelligent SAP invoice analysis tool that uses SBERT and LLM models to identify potential duplicate invoices.
+PayGuard is an intelligent SAP invoice analysis tool that uses SBERT and LLM models to identify potential duplicate invoices.
 
 <p align="center">
   <img src="assets/app_image.png" alt="App Image">
@@ -54,7 +54,7 @@ cd payguardml
     ```bash
     npm start
     ```
-    This will launch the Findec Electron application.
+    This will launch the PayGuard Electron application.
 
 **5. Building the Application Locally:**
 
